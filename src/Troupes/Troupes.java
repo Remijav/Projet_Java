@@ -2,6 +2,11 @@ package Troupes;
 
 import Strategie.*;
 
+/**
+ * Classe représentant une troupe
+ * @author Simon et Rémi
+ */
+
 public abstract class Troupes {
 	
 	private int PV;
@@ -11,7 +16,6 @@ public abstract class Troupes {
 	private Direction direction;
 	private TroupesAction action;
 	private double reward;
-	private Strategie strategie;
 
 	public Troupes(int pv, int degats, Coordonnees pos, String t,Direction dir) {
 		PV = pv;
@@ -38,7 +42,6 @@ public abstract class Troupes {
 	public Direction getDirection() {return direction;}
 	public TroupesAction getAction() {return action;}
 	public double getReward() {return reward;}
-	public Strategie getStrategie() {return strategie;}
 	
 	// Setters
 	public void setPV(int pv) {PV=pv;}
@@ -48,5 +51,4 @@ public abstract class Troupes {
 	public void setDirection(Direction dir) {direction=dir;}
 	public void setAction(TroupesAction action) {this.action = action;}
 	public void setReward(double r) {this.reward=r;}
-	public void setStrategie(Strategie strat) {strategie=strat;}
 }
