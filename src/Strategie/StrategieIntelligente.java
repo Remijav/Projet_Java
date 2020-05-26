@@ -5,6 +5,16 @@ import IG.Plateau;
 import Perceptron.SparseVector;
 import Troupes.*;
 
+
+/**
+ * Si une troupe est Ã  portÃ©e de 2 ennemis ou plus il fuit
+ * Si une troupe a ses PV infÃ©rieur au dÃ©gat de l'ennemi Ã  sa portÃ©e il fuit
+ * Si le chÃ¢teau est en danger la prioritÃ© des troupes est de le dÃ©fendre
+ * Avant chaque dÃ©placement on regarde si la case oÃ¹ la troupe veut se dÃ©placer est risquÃ© ou non 
+ * grÃ¢ce au nombre d'ennemis qui serait Ã  la portÃ©e de la case oÃ¹ la troupe veut se dÃ©placer
+ * @author Simon
+ */
+
 public class StrategieIntelligente extends Strategie{
 	private Plateau plateau;
 	
@@ -13,12 +23,10 @@ public class StrategieIntelligente extends Strategie{
 		this.plateau=plateau;
 	}
 	
-	/*
-	 * Si une troupe est à portée de 2 ennemis ou plus il fuit
-	 * Si une troupe a ses PV inférieur au dégat de l'ennemi à sa portée il fuit
-	 * Si le château est en danger la priorité des troupes est de le défendre
-	 * Avant chaque déplacement on regarde si la case où la troupe veut se déplacer est risqué ou non 
-	 * grâce au nombre d'ennemis qui serait à la portée de case où la troupe veut se déplacer
+	/**
+	 * MÃ©thode qui retourne une action pour la troupe donnÃ©e
+	 * @param troupe
+	 * @return TroupesAction
 	 */
 	
 	public TroupesAction coup(Troupes troupe) {
@@ -36,7 +44,6 @@ public class StrategieIntelligente extends Strategie{
 			}
 			if(estEnDanger(chateau,estBleu) && estABonneDistance(troupe,chateau)) {
 				assaillant = rechercheAssaillantChateau(troupe,estBleu);
-				//System.out.println("Protéger château");
 				action = protegerChateau(troupe,assaillant);
 			}
 			else {
@@ -48,8 +55,14 @@ public class StrategieIntelligente extends Strategie{
 			return coupOptimal(troupe,assaillant);
 		}
 	}
-	
-	// Fonction qui retourne un coup si le château est attaquer, ici la troupe se déplace peut importe la dangerosité de la case
+		
+	/**
+	 * MÃ©thode qui retourne un coup si le chÃ¢teau est attaquer,
+	 * ici la troupe se dÃ©place peut importe la dangerositÃ© de la case
+	 * @param troupe
+	 * @param assaillant
+	 * @return TroupesAction
+	 */
 	
 	public TroupesAction protegerChateau(Troupes troupe, Troupes assaillant) {
 		int x = troupe.getPosition().getX();
@@ -68,7 +81,7 @@ public class StrategieIntelligente extends Strategie{
 				return TroupesAction.ATTACK1;
 			}
 			if(type=="Chevalier") {
-				// Si l'ennemi est à une portée de 1 case et dans la diagonale du Chevalier
+				// Si l'ennemi est Ã  une portÃ©e de 1 case et dans la diagonale du Chevalier
 				if(Math.abs(ax-x)==1 && Math.abs(ay-y)==1) {
 					if(this.deplacementValide(new Coordonnees(x,ay))) {
 						if(ay<y)
@@ -84,7 +97,7 @@ public class StrategieIntelligente extends Strategie{
 					}
 					return TroupesAction.STOP;
 				}
-				// Gestion si l'ennemi n'est pas à portée
+				// Gestion si l'ennemi n'est pas Ã  portÃ©e
 				else {
 					if(ay<y && this.deplacementValide(haut)) {
 							return TroupesAction.TOP;
@@ -162,17 +175,12 @@ public class StrategieIntelligente extends Strategie{
 		}
 	}
 	
-	// Fonction qui retourne la somme des degats d'une liste de troupes
-	
-	public int sommeDegats(ArrayList<Troupes> ennemis) {
-		int somme=0;
-		for(Troupes ennemi : ennemis) {
-			somme+=ennemi.getDegats();
-		}
-		return somme;
-	}
-	
-	// Fonction qui regarde si la situation de la troupe est dangereuse ou non pour attaquer
+	/**
+	 * MÃ©thode qui regarde si la situation de la troupe est dangereuse ou non pour attaquer
+	 * @param troupe
+	 * @param estBleu
+	 * @return boolean
+	 */
 	
 	public boolean estDangereux(Troupes troupe, boolean estBleu) {
 		int PV = troupe.getPV();
@@ -196,7 +204,13 @@ public class StrategieIntelligente extends Strategie{
 		}
 	}
 	
-	// Fonction qui retourne si un déplacement aux coordonnées passées est dangereux pour la troupe ou non
+	/**
+	 * MÃ©thode qui retourne vrai si un dÃ©placement aux coordonnÃ©es passÃ©es est dangereux pour la troupe ou non
+	 * @param troupe
+	 * @param pos
+	 * @param estBleu
+	 * @return boolean
+	 */
 	
 	public boolean deplacementDangereux(Troupes troupe,Coordonnees pos, boolean estBleu) {
 		int PV = troupe.getPV();
@@ -215,7 +229,13 @@ public class StrategieIntelligente extends Strategie{
 		}
 	}
 	
-	// Fonction qui retourne un coup optimal en fonction de la troupe pour aller attaquer son assaillant
+	/**
+	 * MÃ©thode qui retourne un coup optimal en fonction de l'environnement de la troupe
+	 * pour aller attaquer son assaillant
+	 * @param troupe
+	 * @param assaillant
+	 * @return TroupesAction
+	 */
 	
 	public TroupesAction coupOptimal(Troupes troupe, Troupes assaillant) {
 		int x = troupe.getPosition().getX();
@@ -228,7 +248,7 @@ public class StrategieIntelligente extends Strategie{
 		Coordonnees bas = new Coordonnees(x,y+1);
 		Coordonnees haut = new Coordonnees(x,y-1);
 		boolean estBleu = this.estBleu(troupe);
-		// Gestion des attaques si les troupes sont alignés en x
+		// Gestion des attaques si les troupes sont alignÃ©s en x
 		if(ax==x) {
 			if(!estDangereux(troupe,estBleu)) {
 				if(ay==y-1) {
@@ -266,7 +286,7 @@ public class StrategieIntelligente extends Strategie{
 					}
 				}
 			}
-			// Gestion des déplacements si les troupes sont alignés en x
+			// Gestion des dï¿½placements si les troupes sont alignÃ©es en x
 			if(ay<y) {
 				if(this.deplacementValide(haut)) {
 					if(!deplacementDangereux(troupe,haut,estBleu)) {
@@ -298,7 +318,7 @@ public class StrategieIntelligente extends Strategie{
 					return TroupesAction.STOP;
 			}
 		}
-		// Gestion des attaques si les troupes sont alignées en y
+		// Gestion des attaques si les troupes sont alignÃ©es en y
 		if(ay==y) {
 			if(ax==x-1) {
 				troupe.setDirection(Direction.OUEST);
@@ -334,7 +354,7 @@ public class StrategieIntelligente extends Strategie{
 					}
 				}
 			}
-			// Gestion des déplacements si les troupes sont alignées en y
+			// Gestion des dï¿½placements si les troupes sont alignÃ©es en y
 			if(ax>x) {
 				if(this.deplacementValide(droite)) { 
 					if(!deplacementDangereux(troupe,droite,estBleu)) {
@@ -366,11 +386,11 @@ public class StrategieIntelligente extends Strategie{
 					return TroupesAction.STOP;
 			}
 		}
-		// Gestion des déplacements si les troupes sont alignées sur aucun axes
+		// Gestion des dï¿½placements si les troupes sont alignÃ©es sur aucun axes
 		else {
-			// Gestion du cas où la troupe est un Chevalier
+			// Gestion du cas oÃ¹ la troupe est un Chevalier
 			if(type=="Chevalier") {
-				// Si l'ennemi est à une portée de 1 case et dans la diagonale du Chevalier
+				// Si l'ennemi est Ã  une portÃ©e de 1 case et dans la diagonale du Chevalier
 				if(Math.abs(ax-x)==1 && Math.abs(ay-y)==1) {
 					if(this.deplacementValide(new Coordonnees(x,ay))) {
 						if(!deplacementDangereux(troupe,new Coordonnees(x,ay),estBleu)) {
@@ -389,7 +409,7 @@ public class StrategieIntelligente extends Strategie{
 						}
 					}
 				}
-				// Gestion si l'ennemi n'est pas à portée
+				// Gestion si l'ennemi n'est pas Ã  portï¿½e
 				else {
 					if(ay<y && this.deplacementValide(haut)) {
 						if(!deplacementDangereux(troupe,haut,estBleu))
@@ -479,68 +499,60 @@ public class StrategieIntelligente extends Strategie{
 		return TroupesAction.STOP;
 	}
 	
-	// Fonction qui juge si la troupe doit défendre le château o
-	
-
-	// Fonction qui retourne si la troupe est à une bonne distance pour aller défendre le château
+	/**
+	 * MÃ©thode qui retourne vrai si la troupe est Ã  une bonne distance pour aller dÃ©fendre le chÃ¢teau
+	 * @param troupe
+	 * @param chateau
+	 * @return boolean
+	 */
 	
 	public boolean estABonneDistance(Troupes troupe, Troupes chateau) {
-		ArrayList<Troupes> ennemis = ennemiAPortee(troupe.getPosition(),estBleu(troupe));
-		int x = troupe.getPosition().getX();
-		int y = troupe.getPosition().getY();
-		int cx = chateau.getPosition().getX();
-		int cy = chateau.getPosition().getY();
-		double terme1 = Math.pow((cx-x),2);
-		double terme2 = Math.pow((cy-y),2);
-		double d1 = Math.sqrt(terme1+terme2);
-		Troupes chateauEnnemi;
-		double d2;
-		if(estBleu(troupe)) {
-			chateauEnnemi = plateau.getChateau(plateau.getUnite_rouge());
-			terme1 = Math.pow(chateauEnnemi.getPosition().getX()-x,2);
-			terme2 = Math.pow(chateauEnnemi.getPosition().getY()-y,2);
-			d2 = Math.sqrt(terme1+terme2);
-		}
-		else {
-			chateauEnnemi = plateau.getChateau(plateau.getUnite_bleue());
-			terme1 = Math.pow(chateauEnnemi.getPosition().getX()-x,2);
-			terme2 = Math.pow(chateauEnnemi.getPosition().getY()-y,2);
-			d2 = Math.sqrt(terme1+terme2);
-		}
-		if(ennemis.size()==1) {
-			if(estAPortee(chateau,ennemis.get(0).getPosition()))
-				return true;
-			else
-				return false;
-		}
-		else {
+		ArrayList<Troupes> ennemis = ennemiAPortee(chateau.getPosition(),estBleu(troupe));
+		double d1 = calculDistance(troupe,chateau);
+		if(ennemis.size()>0) {
 			if(estBleu(troupe)) {
+				double d2 = calculDistance (troupe,plateau.getChateau(plateau.getUnite_rouge()));
 				if(d1<=d2)
 					return true;
-				else {
-					if(plateau.getUnite_bleue().size()==1)
-						return true;
-					else
-						return false;
-				}
+				else
+					return false;
 			}
 			else {
+				double d2 = calculDistance (troupe,plateau.getChateau(plateau.getUnite_bleue()));
 				if(d1<=d2)
 					return true;
-				else {
-					if(plateau.getUnite_rouge().size()==1)
-						return true;
-					else
-						return false;
-				}
+				else
+					return false;
 			}
 		}
+		else 
+			return false;
 	}
 	
-	// Fonction qui renvoie vrai s'il y a un ennemi à portée d'attaque du château allié	
+	/**
+	 * MÃ©thode qui calule la distance entre deux troupes
+	 * @param troupe
+	 * @param unite
+	 * @return double
+	 */
 	
+	public double calculDistance (Troupes troupe, Troupes unite) {
+		int x = troupe.getPosition().getX();
+		int y = troupe.getPosition().getY();
+		int ux = unite.getPosition().getX();
+		int uy = unite.getPosition().getY();
+		double terme1 = Math.pow((ux-x),2);
+		double terme2 = Math.pow((uy-y),2);
+		double d = Math.sqrt(terme1+terme2);
+		return d;
+	}
 	
-	// Fonction qui retourne si le château est à portée d'un ennemi ou non
+	/**
+	 * MÃ©thode qui retourne si le chÃ¢teau est Ã  portÃ©e d'un ennemi ou non
+	 * @param chateau
+	 * @param estBleu
+	 * @return boolean
+	 */
 	
 	public boolean estEnDanger(Troupes chateau, boolean estBleu) {
 		if(chateau.getType()=="Chateau") {
@@ -594,33 +606,29 @@ public class StrategieIntelligente extends Strategie{
 		return false;
 	}
 	
-	// Fonction qui retourne l'ennemi le plus proche du château et de la troupe	
-
-	
-	// Fonction qui retourne l'ennemi le plus proche du château et de la troupe
+	/**
+	 * MÃ©thode qui retourne l'ennemi le plus proche du chÃ¢teau et de la troupe
+	 * @param troupe
+	 * @param estBleu
+	 * @return Troupes
+	 */
 	
 	public Troupes rechercheAssaillantChateau(Troupes troupe, boolean estBleu) {
 		if(estBleu) {
 			Troupes ennemi = null;
 			Troupes chateau = plateau.getChateau(plateau.getUnite_bleue());
-			int x = troupe.getPosition().getX();
-			int y = troupe.getPosition().getY();
 			int cx = chateau.getPosition().getX();
 			int cy = chateau.getPosition().getY();
 			ArrayList<Troupes> uniteRouge = plateau.getUnite_rouge();
 			for(Troupes unite : uniteRouge) {
 				int ux = unite.getPosition().getX();
 				int uy = unite.getPosition().getY();
-				if(Math.abs(ux-cx)<6 || Math.abs(uy-cy)<6) {
+				if(Math.abs(ux-cx)<6 && Math.abs(uy-cy)<6) {
 					if(ennemi == null)
 						ennemi = unite;
 					else {
-						double terme1 = Math.pow((ux-x),2);
-						double terme2 = Math.pow((uy-y),2);
-						double d1 = Math.sqrt(terme1+terme2);
-						terme1 = Math.pow((ennemi.getPosition().getX()-x),2);
-						terme2 = Math.pow((ennemi.getPosition().getY()-y),2);
-						double d2 = Math.sqrt(terme1+terme2);
+						double d1 = calculDistance(troupe,unite);
+						double d2 = calculDistance(troupe,ennemi);
 						if(d1<d2)
 							ennemi=unite;
 						else {
@@ -644,24 +652,18 @@ public class StrategieIntelligente extends Strategie{
 		else {
 			Troupes ennemi = null;
 			Troupes chateau = plateau.getChateau(plateau.getUnite_bleue());
-			int x = troupe.getPosition().getX();
-			int y = troupe.getPosition().getY();
 			int cx = chateau.getPosition().getX();
 			int cy = chateau.getPosition().getY();
 			ArrayList<Troupes> uniteBleue = plateau.getUnite_bleue();
 			for(Troupes unite : uniteBleue) {
 				int ux = unite.getPosition().getX();
 				int uy = unite.getPosition().getY();
-				if(Math.abs(ux-cx)<6 || Math.abs(uy-cy)<6) {
+				if(Math.abs(ux-cx)<6 && Math.abs(uy-cy)<6) {
 					if(ennemi == null)
 						ennemi = unite;
 					else {
-						double terme1 = Math.pow((ux-x),2);
-						double terme2 = Math.pow((uy-y),2);
-						double d1 = Math.sqrt(terme1+terme2);
-						terme1 = Math.pow((ennemi.getPosition().getX()-x),2);
-						terme2 = Math.pow((ennemi.getPosition().getY()-y),2);
-						double d2 = Math.sqrt(terme1+terme2);
+						double d1 = calculDistance(troupe,unite);
+						double d2 = calculDistance(troupe,ennemi);
 						if(d1<d2)
 							ennemi=unite;
 						else {
@@ -684,10 +686,12 @@ public class StrategieIntelligente extends Strategie{
 		}
 	}
 	
-	// Fonction qui retourne une liste des ennemis à portée de la case correspondante	
-
-	
-	// Fonction qui retourne une liste des ennemis à portée d'attaque de la case correspondant aux coordonnées passées
+	/**
+	 * MÃ©thode qui retourne une liste des ennemis Ã  portÃ©e des coordonnÃ©es passÃ©es
+	 * @param coor
+	 * @param estBleu
+	 * @return ArrayList<Troupes>
+	 */
 	
 	public ArrayList<Troupes> ennemiAPortee(Coordonnees coor, boolean estBleu) {
 		int x = coor.getX();
@@ -825,12 +829,14 @@ public class StrategieIntelligente extends Strategie{
 			}
 			return ennemis;
 		}
-	}
+	}	
 	
-	// Fonction qui retourne si une troupe est à portée d'attaque de la case correspondant aux coordonnées
-	
-	
-	// Fonction qui retourne si une troupe est à portée d'attaque de la case correspondant aux coordonnées passées
+	/**
+	 * MÃ©thode qui retourne vrai si un ennemi est Ã  portÃ©e d'attaque de la troupe
+	 * @param troupe
+	 * @param pos
+	 * @return boolean
+	 */
 	
 	public boolean estAPortee(Troupes troupe, Coordonnees pos) {
 		int x = troupe.getPosition().getX();
@@ -854,12 +860,13 @@ public class StrategieIntelligente extends Strategie{
 			}
 		}
 		return false;
-	}
+	}	
 	
-	// Fonction qui recherche l'ennemi le plus proche de la troupe	
-	
-	
-	// Fonction qui retourne l'ennemi le plus proche de la troupe
+	/**
+	 * MÃ©thode qui retourne l'ennemi le plus proche de la troupe
+	 * @param troupe
+	 * @return Troupes
+	 */
 	
 	public Troupes rechercheEnnemi(Troupes troupe) {
 		int x = troupe.getPosition().getX();
@@ -898,4 +905,5 @@ public class StrategieIntelligente extends Strategie{
 	public boolean estPerceptron() {return false;}
 	
 	public SparseVector encodageEtat(Plateau plateau, Troupes troupe) {return null;}
+	
 }
