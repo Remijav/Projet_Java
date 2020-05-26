@@ -7,7 +7,13 @@ import Perceptron.*;
 import java.util.ArrayList;
 import java.util.Random;
 
-public class Jeu extends Game{
+
+/**
+ * Classe qui affecte les stratégies aux équipes et lance la partie
+ * @author Simon et Rémi
+ */
+
+public class Jeu implements Runnable{
 	private Plateau plateau;
 	private ArrayList<Troupes> TroupesBleues;
 	private ArrayList<Troupes> TroupesRouges;
@@ -16,7 +22,6 @@ public class Jeu extends Game{
 	private Strategie strategieBleu;
 	private Strategie strategieRouge;
 	private int bleu;
-	private int estPerceptron;
 	private boolean partieFini = false;
 	private boolean gagneRouge;
 	private boolean gagneBleu;
@@ -25,21 +30,33 @@ public class Jeu extends Game{
 	private double reward;
 	private ArrayList<Quadruplet> listQuad;
 	
+	/**
+	 * Méthode qui instancie le Jeu, affecte les stratégies aux équipes 
+	 * et lance la partie en fonction de la valeur du booléen batch
+	 * @param plateau
+	 * @param stratBleu
+	 * @param stratRouge
+	 * @param nbTours
+	 * @param batch
+	 */
+	
 	public Jeu(Plateau plateau, Strategie stratBleu, Strategie stratRouge, int nbTours, boolean batch) {
-		super();
 		this.plateau = plateau;
 		TroupesBleues = plateau.getUnite_bleue();
 		TroupesRouges = plateau.getUnite_rouge();
 		chateauBleu = plateau.getChateau(TroupesBleues);
 		chateauRouge = plateau.getChateau(TroupesRouges);
 		strategieBleu=stratBleu;
-		metStrategie();
 		strategieRouge=stratRouge;
 		bleu = new Random().nextInt(2);
 		this.nbTours = nbTours;
 		this.batch=batch;
 		this.listQuad = new ArrayList<Quadruplet>();
 	}
+	
+	/**
+	 * Méthode qui affiche les coordonnées des troupes de chaque équipe
+	 */
 	
 	public void afficheCoordonneesTroupes() {
 		for(Troupes troupe : TroupesBleues) {
@@ -50,12 +67,20 @@ public class Jeu extends Game{
 		}
 	}
 	
-	public void partie() {
+	/**
+	 * Méthode qui lance la partie en fonction du booléen batch
+	 */
+	
+	public void run() {
 		if(batch)
 			partieBatch();
 		else
 			partieIG();
 	}
+	
+	/**
+	 * Méthode qui lance la partie avec l'interface graphique
+	 */
 	
 	public void partieIG() {
 		System.out.println("Debut de partie");
@@ -64,19 +89,30 @@ public class Jeu extends Game{
 		reward=0;
 		while(chateauBleu.getPV()>0 && chateauRouge.getPV()>0 && tour < this.nbTours) {
 			++tour;
-			System.out.println("Tour : "+tour);
 			if(bleu==0) {
 				if(TroupesBleues.size()>1) {
 					for(Troupes troupe : TroupesBleues) {
 						if(troupe.getType()!="Chateau" && chateauBleu.getPV()>0 && chateauRouge.getPV()>0) {
-							TroupesAction action = troupe.getStrategie().coup(troupe);
-							System.out.println(troupe.toString()+", strategie="+troupe.getStrategie().getClass()+", action="+action);
-							troupe.getStrategie().jouer(action, troupe,true);
-							reward+=troupe.getReward();
-							EnleveTroupeMorte(true);
+							TroupesAction action;
+							if(strategieBleu.estPerceptron()) {
+								SparseVector etatInit = strategieBleu.encodageEtat(plateau, troupe);
+								action = strategieBleu.coup(troupe);
+								strategieBleu.jouer(action, troupe);
+								SparseVector etatAtteint = strategieBleu.encodageEtat(plateau, troupe);
+								reward+=troupe.getReward();
+								EnleveTroupeMorte(true);
+							
+								Quadruplet quad = new Quadruplet(etatInit,action,etatAtteint,troupe.getReward());
+								listQuad.add(quad);
+							}
+							else {
+								action = strategieBleu.coup(troupe);
+								strategieBleu.jouer(action, troupe);
+								reward+=troupe.getReward();
+								EnleveTroupeMorte(true);
+							}
 						}
 					}
-					System.out.println("Fin tour bleu");
 					plateau.repaint();
 					try {
 						Thread.sleep(3000);
@@ -90,12 +126,22 @@ public class Jeu extends Game{
 				if(TroupesRouges.size()>1) {
 					for(Troupes troupe : TroupesRouges) {
 						if(troupe.getType()!="Chateau" && chateauBleu.getPV()>0 && chateauRouge.getPV()>0) {
-							TroupesAction action = strategieRouge.coup(troupe);
-							System.out.println(troupe.toString()+", action="+action);
-							strategieRouge.jouer(action, troupe,false);
+							if(strategieRouge.estPerceptron()) {
+								SparseVector etatInit = strategieRouge.encodageEtat(plateau, troupe);
+								TroupesAction action = strategieRouge.coup(troupe);
+								strategieRouge.jouer(action, troupe);
+								SparseVector etatAtteint = strategieBleu.encodageEtat(plateau, troupe);
+								Quadruplet quad = new Quadruplet(etatInit,action,etatAtteint,troupe.getReward());
+								listQuad.add(quad);
+								EnleveTroupeMorte(false);
+							}
+							else {
+								TroupesAction action = strategieRouge.coup(troupe);
+								strategieRouge.jouer(action, troupe);
+								EnleveTroupeMorte(false);
+							}
 						}
 					}
-					System.out.println("Fin tour rouge");
 					plateau.repaint();
 					try {
 						Thread.sleep(3000);
@@ -126,6 +172,10 @@ public class Jeu extends Game{
 		}
 	}
 	
+	/**
+	 * Méthode qui lance la partie sans l'interface graphique
+	 */
+	
 	public void partieBatch() {
 		int tour = 0;
 		while(chateauBleu.getPV()>0 && chateauRouge.getPV()>0 && tour < this.nbTours) {
@@ -134,20 +184,21 @@ public class Jeu extends Game{
 				if(TroupesBleues.size()>1) {
 					for(Troupes troupe : TroupesBleues) {
 						if(troupe.getType()!="Chateau" && chateauBleu.getPV()>0 && chateauRouge.getPV()>0) {
+							TroupesAction action;
 							if(strategieBleu.estPerceptron()) {
 								SparseVector etatInit = strategieBleu.encodageEtat(plateau, troupe);
-								TroupesAction action = troupe.getStrategie().coup(troupe);
-								troupe.getStrategie().jouer(action, troupe,true);
+								action = strategieBleu.coup(troupe);
+								strategieBleu.jouer(action, troupe);
 								reward+=troupe.getReward();
 								EnleveTroupeMorte(true);
-							
 								SparseVector etatAtteint = strategieBleu.encodageEtat(plateau, troupe);
 								Quadruplet quad = new Quadruplet(etatInit,action,etatAtteint,troupe.getReward());
 								listQuad.add(quad);
 							}
 							else {
-								TroupesAction action = troupe.getStrategie().coup(troupe);
-								troupe.getStrategie().jouer(action, troupe,true);
+								
+								action = strategieBleu.coup(troupe);
+								strategieBleu.jouer(action, troupe);
 								reward+=troupe.getReward();
 								EnleveTroupeMorte(true);
 							}
@@ -163,14 +214,17 @@ public class Jeu extends Game{
 							if(strategieRouge.estPerceptron()) {
 								SparseVector etatInit = strategieRouge.encodageEtat(plateau, troupe);
 								TroupesAction action = strategieRouge.coup(troupe);
-								strategieRouge.jouer(action, troupe,false);
+								strategieRouge.jouer(action, troupe);
 								SparseVector etatAtteint = strategieBleu.encodageEtat(plateau, troupe);
 								Quadruplet quad = new Quadruplet(etatInit,action,etatAtteint,troupe.getReward());
 								listQuad.add(quad);
+								EnleveTroupeMorte(false);
 							}
 							else {
+								
 								TroupesAction action = strategieRouge.coup(troupe);
-								strategieRouge.jouer(action, troupe,false);
+								strategieRouge.jouer(action, troupe);
+								EnleveTroupeMorte(false);
 							}
 						}
 					}
@@ -195,6 +249,11 @@ public class Jeu extends Game{
 		}
 	}
 	
+	/**
+	 * Méthode qui enlève les troupes mortes des listes des équipes bleues et rouges
+	 * @param estBleu
+	 */
+	
 	public void EnleveTroupeMorte(boolean estBleu) {
 		if(!estBleu) {
 			for(int i=0; i<TroupesBleues.size(); ++i) {
@@ -207,26 +266,6 @@ public class Jeu extends Game{
 				if(TroupesRouges.get(i).getPV()<=0 && TroupesRouges.get(i).getType()!="Chateau")
 					this.TroupesRouges.remove(i);
 			}
-		}
-	}
-	
-	public void metStrategie() {
-		Random r = new Random();
-		this.estPerceptron = r.nextInt(this.TroupesBleues.size());
-		while(this.TroupesBleues.get(estPerceptron).getType()=="Chateau") {
-			estPerceptron = r.nextInt(this.TroupesBleues.size());
-		}
-		int cpt=0;
-		for(Troupes troupe : this.TroupesBleues) {
-			if(troupe.getType()!="Chateau") {
-				if(cpt==estPerceptron) {
-					troupe.setStrategie(new StrategiePerceptron(this.plateau));
-				}
-				else {
-					troupe.setStrategie(strategieBleu);
-				}
-			}
-			++cpt;
 		}
 	}
 	
